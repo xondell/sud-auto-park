@@ -150,9 +150,11 @@ function vitePluginManusDebugCollector(): Plugin {
   };
 }
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
+const pagesAssetPaths: Plugin = { name: "pages-asset-paths", transform(code, id) { return id.includes("client/src") ? code.replaceAll('src="/sud-logo.svg"', 'src={`${import.meta.env.BASE_URL}sud-logo.svg`}') : undefined; } };
+const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector(), pagesAssetPaths];
 
 export default defineConfig({
+  base: "/sud-auto-park/",
   plugins,
   resolve: {
     alias: {

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "wouter";
-import { trpc } from "@/lib/trpc";
+import { getVehicles, type Vehicle } from "@/data/vehicles";
 import { Search, SlidersHorizontal, ArrowRight, MapPin, Gauge, Fuel, Cog, Bike, CarFront, BusFront, Instagram, Phone, ShieldCheck, Sparkles, Menu, X } from "lucide-react";
 
 type TypeFilter = "all" | "car" | "motorcycle" | "minibus";
@@ -15,7 +15,7 @@ const typeOptions = [
 function formatPrice(value: number) { return new Intl.NumberFormat("ru-RU").format(value); }
 function formatMileage(value: number) { return new Intl.NumberFormat("ru-RU").format(value); }
 
-function VehicleCard({ vehicle }: { vehicle: any }) {
+function VehicleCard({ vehicle }: { vehicle: Vehicle }) {
   return (
     <Link href={`/vehicle/${vehicle.slug}`} className="group block overflow-hidden rounded-[24px] bg-[#17171a] soft-shadow transition duration-200 hover:-translate-y-1">
       <div className="relative aspect-[1.35/1] overflow-hidden bg-[#1b1b1f]">
@@ -42,9 +42,10 @@ export default function Home() {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [maxPrice, setMaxPrice] = useState(40000);
   const [yearFrom, setYearFrom] = useState(2000);
-  const filters = useMemo(() => ({ query: query || undefined, type: type === "all" ? undefined : type, maxPrice, yearFrom }), [query, type, maxPrice, yearFrom]);
-  const { data: vehicles = [], isLoading } = trpc.vehicles.list.useQuery(filters);
-  const { data: stats } = trpc.vehicles.stats.useQuery();
+  const vehicles = useMemo(() => getVehicles(), []);
+  const isLoading = false;
+  const filteredVehicles = useMemo(() => vehicles.filter((vehicle) => `${vehicle.make} ${vehicle.model}`.toLowerCase().includes(query.toLowerCase()) && (type === "all" || vehicle.type === type) && vehicle.price <= maxPrice && vehicle.year >= yearFrom), [vehicles, query, type, maxPrice, yearFrom]);
+  const stats = useMemo(() => ({ total: vehicles.length, available: vehicles.filter((vehicle) => vehicle.status === "available").length }), [vehicles]);
 
   return <div className="min-h-screen bg-[#0d0d0f]">
     <header className="sticky top-0 z-30 border-b border-[#2b2b30]/80 bg-[#0d0d0f]/90 backdrop-blur-xl"><div className="container flex h-[74px] items-center justify-between"><Link href="/" className="flex items-center gap-3"><img src="/sud-logo.svg" alt="SUD Auto Park" className="h-10 w-10 rounded-xl" /><span className="font-extrabold tracking-[.18em] text-white">AUTO PARK</span></Link><nav className="hidden items-center gap-8 text-sm font-semibold text-[#c4c4ca] md:flex"><a href="#catalog" className="transition hover:text-[#d71920]">Каталог</a><a href="#about" className="transition hover:text-[#d71920]">Почему мы</a><a href="#contacts" className="transition hover:text-[#d71920]">Контакты</a><Link href="/admin" className="rounded-full border border-[#45454d] px-4 py-2 text-white transition hover:border-[#d71920] hover:text-[#d71920]">Админ-панель</Link></nav><button className="rounded-lg p-2 md:hidden" onClick={() => setMenuOpen(!menuOpen)} aria-label="Меню">{menuOpen ? <X /> : <Menu />}</button></div>{menuOpen && <div className="container pb-4 md:hidden"><div className="grid gap-2 rounded-2xl bg-[#17171a] p-3 soft-shadow"><a href="#catalog" onClick={() => setMenuOpen(false)} className="rounded-xl px-4 py-3 font-semibold">Каталог</a><a href="#about" onClick={() => setMenuOpen(false)} className="rounded-xl px-4 py-3 font-semibold">Почему мы</a><Link href="/admin" className="rounded-xl bg-[#d71920] px-4 py-3 font-semibold text-white">Админ-панель</Link></div></div>}</header>
