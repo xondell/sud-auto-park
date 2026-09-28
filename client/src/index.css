@@ -2,22 +2,22 @@
 @import "tw-animate-css";
 
 :root {
-  --background: 42 29% 94%;
-  --foreground: 220 18% 15%;
-  --card: 0 0% 100%;
-  --card-foreground: 220 18% 15%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 220 18% 15%;
+  --background: 0 0% 5%;
+  --foreground: 0 0% 96%;
+  --card: 0 0% 9%;
+  --card-foreground: 0 0% 96%;
+  --popover: 0 0% 9%;
+  --popover-foreground: 0 0% 96%;
   --primary: 357 78% 47%;
   --primary-foreground: 0 0% 100%;
-  --secondary: 40 19% 88%;
-  --secondary-foreground: 220 18% 15%;
-  --muted: 40 16% 90%;
-  --muted-foreground: 220 9% 45%;
+  --secondary: 0 0% 15%;
+  --secondary-foreground: 0 0% 96%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 68%;
   --accent: 354 82% 58%;
-  --accent-foreground: 220 18% 15%;
-  --border: 39 18% 84%;
-  --input: 39 18% 84%;
+  --accent-foreground: 0 0% 96%;
+  --border: 0 0% 18%;
+  --input: 0 0% 18%;
   --ring: 357 78% 47%;
   --radius: 1rem;
 }
