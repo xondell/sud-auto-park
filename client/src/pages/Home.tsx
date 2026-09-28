@@ -1,33 +1,62 @@
-import { useAuth } from "@/_core/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { Streamdown } from 'streamdown';
+import { useMemo, useState } from "react";
+import { Link } from "wouter";
+import { trpc } from "@/lib/trpc";
+import { Search, SlidersHorizontal, ArrowRight, MapPin, Gauge, Fuel, Cog, Bike, CarFront, BusFront, Instagram, Phone, ShieldCheck, Sparkles, Menu, X } from "lucide-react";
 
-/**
- * All content in this page are only for example, replace with your own feature implementation
- * When building pages, remember your instructions in Frontend Workflow, Frontend Best Practices, Design Guide and Common Pitfalls
- */
-export default function Home() {
-  // The useAuth hook provides authentication state.
-  // To implement login/logout, call logout(), or start login from an event
-  // handler: onClick={() => startLogin()} (imported from "@/const"). Never call
-  // startLogin() during render (no href={startLogin()}) — it mints a one-time
-  // nonce cookie and must run only at the moment of navigation.
-  let { user, loading, error, isAuthenticated, logout } = useAuth();
+type TypeFilter = "all" | "car" | "motorcycle" | "minibus";
 
-  // If theme is switchable in App.tsx, we can implement theme toggling like this:
-  // const { theme, toggleTheme } = useTheme();
+const typeOptions = [
+  { key: "all" as const, label: "Весь транспорт", icon: Sparkles },
+  { key: "car" as const, label: "Автомобили", icon: CarFront },
+  { key: "motorcycle" as const, label: "Мотоциклы", icon: Bike },
+  { key: "minibus" as const, label: "Микроавтобусы", icon: BusFront },
+];
 
+function formatPrice(value: number) { return new Intl.NumberFormat("ru-RU").format(value); }
+function formatMileage(value: number) { return new Intl.NumberFormat("ru-RU").format(value); }
+
+function VehicleCard({ vehicle }: { vehicle: any }) {
   return (
-    <div className="min-h-screen flex flex-col">
-      <main>
-        {/* Example: lucide-react for icons */}
-        <Loader2 className="animate-spin" />
-        Example Page
-        {/* Example: Streamdown for markdown rendering */}
-        <Streamdown>Any **markdown** content</Streamdown>
-        <Button variant="default">Example Button</Button>
-      </main>
-    </div>
+    <Link href={`/vehicle/${vehicle.slug}`} className="group block overflow-hidden rounded-[24px] bg-white soft-shadow transition duration-200 hover:-translate-y-1">
+      <div className="relative aspect-[1.35/1] overflow-hidden bg-[#dfe5e6]">
+        <img src={vehicle.imageUrl} alt={`${vehicle.make} ${vehicle.model}`} className="h-full w-full object-cover transition duration-500 group-hover:scale-105" />
+        <div className="absolute left-4 top-4 flex gap-2">
+          <span className="rounded-full bg-white/90 px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#182129]">{vehicle.type === "car" ? "Авто" : vehicle.type === "motorcycle" ? "Мото" : "Микро"}</span>
+          {vehicle.featured === 1 && <span className="rounded-full bg-[#ff9956] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-[#182129]">Выбор SUD</span>}
+        </div>
+        <div className="absolute bottom-4 left-4 rounded-full bg-[#182129]/90 px-3 py-1 text-xs font-semibold text-white">{vehicle.status === "available" ? "В наличии" : vehicle.status === "reserved" ? "Бронь" : "Продано"}</div>
+      </div>
+      <div className="p-5">
+        <div className="mb-1 flex items-start justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-widest text-[#6f7b80]">{vehicle.year} · {vehicle.location}</p><h3 className="mt-1 text-xl font-extrabold">{vehicle.make} {vehicle.model}</h3></div><ArrowRight className="mt-1 h-5 w-5 text-[#0077a7] transition group-hover:translate-x-1" /></div>
+        <div className="my-4 grid grid-cols-3 gap-2 border-y border-[#e8e5df] py-3 text-xs text-[#6f7b80]"><span className="flex items-center gap-1"><Gauge className="h-3.5 w-3.5" />{formatMileage(vehicle.mileage)} км</span><span className="flex items-center gap-1"><Fuel className="h-3.5 w-3.5" />{vehicle.fuel}</span><span className="flex items-center gap-1"><Cog className="h-3.5 w-3.5" />{vehicle.transmission}</span></div>
+        <div className="flex items-end justify-between"><div><p className="text-xs text-[#6f7b80]">Цена</p><p className="text-2xl font-extrabold text-[#0077a7]">€{formatPrice(vehicle.price)}</p></div><span className="text-xs font-semibold text-[#6f7b80]">Подробнее</span></div>
+      </div>
+    </Link>
   );
+}
+
+export default function Home() {
+  const [query, setQuery] = useState("");
+  const [type, setType] = useState<TypeFilter>("all");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [maxPrice, setMaxPrice] = useState(40000);
+  const [yearFrom, setYearFrom] = useState(2000);
+  const filters = useMemo(() => ({ query: query || undefined, type: type === "all" ? undefined : type, maxPrice, yearFrom }), [query, type, maxPrice, yearFrom]);
+  const { data: vehicles = [], isLoading } = trpc.vehicles.list.useQuery(filters);
+  const { data: stats } = trpc.vehicles.stats.useQuery();
+
+  return <div className="min-h-screen bg-[#f4f1eb]">
+    <header className="sticky top-0 z-30 border-b border-[#e4e0d8]/80 bg-[#f4f1eb]/90 backdrop-blur-xl"><div className="container flex h-[74px] items-center justify-between"><Link href="/" className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#182129] text-sm font-extrabold text-white">SUD</span><span className="font-extrabold tracking-[.18em] text-[#182129]">AUTO PARK</span></Link><nav className="hidden items-center gap-8 text-sm font-semibold text-[#526066] md:flex"><a href="#catalog" className="transition hover:text-[#0077a7]">Каталог</a><a href="#about" className="transition hover:text-[#0077a7]">Почему мы</a><a href="#contacts" className="transition hover:text-[#0077a7]">Контакты</a><Link href="/admin" className="rounded-full border border-[#cfd2cb] px-4 py-2 text-[#182129] transition hover:border-[#0077a7] hover:text-[#0077a7]">Админ-панель</Link></nav><button className="rounded-lg p-2 md:hidden" onClick={() => setMenuOpen(!menuOpen)} aria-label="Меню">{menuOpen ? <X /> : <Menu />}</button></div>{menuOpen && <div className="container pb-4 md:hidden"><div className="grid gap-2 rounded-2xl bg-white p-3 soft-shadow"><a href="#catalog" onClick={() => setMenuOpen(false)} className="rounded-xl px-4 py-3 font-semibold">Каталог</a><a href="#about" onClick={() => setMenuOpen(false)} className="rounded-xl px-4 py-3 font-semibold">Почему мы</a><Link href="/admin" className="rounded-xl bg-[#182129] px-4 py-3 font-semibold text-white">Админ-панель</Link></div></div>}</header>
+
+    <main>
+      <section className="container grid gap-10 pb-14 pt-12 md:grid-cols-[1.02fr_.98fr] md:items-center md:pt-20"><div className="reveal"><div className="eyebrow mb-5">SUD AUTOPARK · КИШИНЁВ</div><h1 className="max-w-[680px] text-[clamp(2.8rem,7vw,5.8rem)] font-extrabold leading-[.95]">Транспорт,<br /><span className="text-[#0077a7]">которому</span> доверяют.</h1><p className="mt-7 max-w-[520px] text-lg leading-relaxed text-[#637075]">Автомобили, мотоциклы и микроавтобусы с понятной историей, честной ценой и поддержкой на каждом шаге.</p><div className="mt-8 flex flex-wrap gap-3"><a href="#catalog" className="inline-flex items-center gap-2 rounded-full bg-[#182129] px-6 py-3.5 font-bold text-white transition hover:bg-[#0077a7]">Смотреть каталог <ArrowRight className="h-4 w-4" /></a><a href="https://www.instagram.com/sudautopark.md/" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full border border-[#bfc4bd] px-6 py-3.5 font-bold text-[#182129] transition hover:border-[#182129]"><Instagram className="h-4 w-4" /> Instagram</a></div><div className="mt-10 flex flex-wrap gap-8 border-t border-[#ddd9d1] pt-6"><div><p className="text-2xl font-extrabold">{stats?.total ?? 10}+</p><p className="text-sm text-[#758086]">единиц в каталоге</p></div><div><p className="text-2xl font-extrabold">{stats?.available ?? 10}</p><p className="text-sm text-[#758086]">доступно сейчас</p></div><div><p className="text-2xl font-extrabold">2014</p><p className="text-sm text-[#758086]">на рынке с года</p></div></div></div><div className="reveal reveal-delay-2 relative min-h-[410px] overflow-hidden rounded-[32px] bg-[#0077a7] p-5 md:min-h-[530px]"><div className="absolute -right-20 -top-20 h-64 w-64 rounded-full border-[36px] border-[#ff9956]/70" /><div className="absolute -bottom-14 -left-14 h-48 w-48 rounded-full bg-[#ff9956]" /><img src="https://images.unsplash.com/photo-1517846693594-1567da72af75?auto=format&fit=crop&w=1200&q=85" alt="Автомобиль SUD Auto Park" className="relative z-10 h-full min-h-[370px] w-full rounded-[24px] object-cover object-center mix-blend-normal" /><div className="absolute bottom-10 left-10 z-20 rounded-2xl bg-white/90 px-4 py-3 backdrop-blur"><p className="text-xs font-bold uppercase tracking-widest text-[#0077a7]">Сейчас в наличии</p><p className="mt-1 font-extrabold">Готовы к вашим маршрутам</p></div></div></section>
+
+      <section id="catalog" className="container scroll-mt-24 pb-24"><div className="mb-8 flex flex-col justify-between gap-5 md:flex-row md:items-end"><div><div className="eyebrow mb-3">ВЫБЕРИТЕ СВОЙ</div><h2 className="text-4xl font-extrabold md:text-5xl">Каталог транспорта</h2></div><p className="max-w-[340px] text-sm leading-relaxed text-[#758086]">Подберём вариант под город, бизнес, путешествия или новые ощущения.</p></div><div className="mb-7 rounded-[24px] bg-white p-3 soft-shadow"><div className="flex flex-col gap-3 lg:flex-row"><div className="relative flex-1"><Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-[#7a8588]" /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Марка, модель или ключевое слово" className="h-14 w-full rounded-2xl bg-[#f5f3ee] pl-12 pr-4 outline-none ring-[#0077a7] transition focus:ring-2" /></div><button onClick={() => setFiltersOpen(!filtersOpen)} className="inline-flex h-14 items-center justify-center gap-2 rounded-2xl border border-[#d8d8d0] px-5 font-bold transition hover:border-[#0077a7]"><SlidersHorizontal className="h-4 w-4" /> Фильтры</button></div>{filtersOpen && <div className="mt-3 grid gap-3 border-t border-[#ece8e1] pt-4 sm:grid-cols-2 lg:grid-cols-4"><label className="grid gap-2 text-xs font-bold uppercase tracking-wider text-[#687378]">Макс. цена: €{formatPrice(maxPrice)}<input type="range" min="5000" max="50000" step="1000" value={maxPrice} onChange={(e) => setMaxPrice(Number(e.target.value))} className="accent-[#0077a7]" /></label><label className="grid gap-2 text-xs font-bold uppercase tracking-wider text-[#687378]">От года: {yearFrom}<input type="range" min="1990" max="2024" value={yearFrom} onChange={(e) => setYearFrom(Number(e.target.value))} className="accent-[#0077a7]" /></label><div className="flex items-end"><button onClick={() => { setMaxPrice(40000); setYearFrom(2000); setQuery(""); }} className="text-sm font-bold text-[#0077a7]">Сбросить фильтры</button></div></div>}</div><div className="mb-8 flex flex-wrap gap-2">{typeOptions.map(({ key, label, icon: Icon }) => <button key={key} onClick={() => setType(key)} className={`inline-flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-bold transition ${type === key ? "bg-[#182129] text-white" : "bg-[#e9e5dd] text-[#526066] hover:bg-white"}`}><Icon className="h-4 w-4" />{label}</button>)}</div>{isLoading ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3"><div className="h-96 animate-pulse rounded-[24px] bg-white/70" /><div className="h-96 animate-pulse rounded-[24px] bg-white/70" /><div className="h-96 animate-pulse rounded-[24px] bg-white/70" /></div> : vehicles.length ? <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{vehicles.map((vehicle) => <VehicleCard key={vehicle.id} vehicle={vehicle} />)}</div> : <div className="rounded-[24px] bg-white p-12 text-center soft-shadow"><h3 className="text-2xl font-extrabold">Ничего не нашли</h3><p className="mt-2 text-[#758086]">Попробуйте изменить запрос или сбросить фильтры.</p></div>}</section>
+
+      <section id="about" className="border-y border-[#ddd9d1] bg-[#ebe8e1]"><div className="container grid gap-12 py-20 md:grid-cols-[.8fr_1.2fr] md:items-start"><div><div className="eyebrow mb-4">ПОЧЕМУ SUD</div><h2 className="max-w-[420px] text-4xl font-extrabold md:text-5xl">Не просто купить.<br /><span className="text-[#0077a7]">Выбрать правильно.</span></h2></div><div className="grid gap-8 sm:grid-cols-2"><div><ShieldCheck className="mb-4 h-8 w-8 text-[#0077a7]" /><h3 className="text-xl font-extrabold">Проверенная история</h3><p className="mt-2 text-sm leading-relaxed text-[#687378]">Показываем ключевые характеристики и честно рассказываем о состоянии каждой единицы.</p></div><div><Sparkles className="mb-4 h-8 w-8 text-[#ff7e35]" /><h3 className="text-xl font-extrabold">Прозрачная цена</h3><p className="mt-2 text-sm leading-relaxed text-[#687378]">Никаких сюрпризов: цена на сайте соответствует актуальному предложению.</p></div><div><MapPin className="mb-4 h-8 w-8 text-[#0077a7]" /><h3 className="text-xl font-extrabold">Кишинёв рядом</h3><p className="mt-2 text-sm leading-relaxed text-[#687378]">Приглашаем на просмотр, тест-драйв и помогаем оформить сделку.</p></div><div><Phone className="mb-4 h-8 w-8 text-[#ff7e35]" /><h3 className="text-xl font-extrabold">Поддержка в мессенджере</h3><p className="mt-2 text-sm leading-relaxed text-[#687378]">Быстро отвечаем на вопросы и помогаем подобрать транспорт под задачу.</p></div></div></div></section>
+    </main>
+
+    <footer id="contacts" className="bg-[#182129] text-white"><div className="container grid gap-10 py-12 md:grid-cols-[1fr_auto_auto] md:items-end"><div><div className="flex items-center gap-3"><span className="grid h-10 w-10 place-items-center rounded-xl bg-[#ff9956] text-sm font-extrabold text-[#182129]">SUD</span><span className="font-extrabold tracking-[.18em]">AUTO PARK</span></div><p className="mt-5 max-w-[360px] text-sm leading-relaxed text-white/60">Транспорт для города, бизнеса и жизни. Автомобили, мотоциклы и микроавтобусы в одном месте.</p></div><div><p className="mb-3 text-xs font-bold uppercase tracking-widest text-white/50">Связаться</p><a className="block font-semibold hover:text-[#ff9956]" href="tel:+37369999999">+373 69 999 999</a><a className="mt-1 block font-semibold hover:text-[#ff9956]" href="https://www.instagram.com/sudautopark.md/" target="_blank" rel="noreferrer">@sudautopark.md</a></div><div className="text-sm text-white/50 md:text-right">© 2026 SUD Auto Park<br />Кишинёв, Молдова</div></div></footer>
+  </div>;
 }
