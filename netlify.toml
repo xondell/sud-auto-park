@@ -1,0 +1,6 @@
+[build]
+  command = "pnpm build:pages"
+  publish = "dist/public"
+
+[functions]
+  directory = "netlify/functions"

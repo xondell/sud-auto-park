@@ -1,4 +1,4 @@
-export type Vehicle = { id: number; slug: string; type: "car" | "motorcycle" | "minibus"; make: string; model: string; year: number; price: number; mileage: number; fuel: string; transmission: string; engine: string; drive: string; color: string; featured: number; imageUrl: string; description: string; location: string; status: "available" | "reserved" | "sold" };
+export type Vehicle = { id: number; slug: string; type: "car" | "motorcycle" | "minibus"; make: string; model: string; year: number; price: number; mileage: number; fuel: string; transmission: string; engine: string; drive: string; color: string; featured: number; imageUrl: string; imageUrls: string[]; description: string; location: string; status: "available" | "reserved" | "sold" };
 
 const data: Omit<Vehicle, "id" | "location" | "status">[] = [
   { slug: "skoda-octavia-2023", type: "car", make: "Skoda", model: "Octavia A8", year: 2023, price: 17200, mileage: 103000, fuel: "Plug-in гибрид", transmission: "Автомат", engine: "1.4 л", drive: "Передний", color: "Серебристый", featured: 1, imageUrl: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=1200&q=85", description: "Практичный городской универсал с экономичным гибридным приводом и богатой комплектацией." },
@@ -13,6 +13,7 @@ const data: Omit<Vehicle, "id" | "location" | "status">[] = [
   { slug: "ford-transit-2018", type: "minibus", make: "Ford", model: "Transit Custom", year: 2018, price: 18400, mileage: 198000, fuel: "Дизель", transmission: "Механика", engine: "2.0 л", drive: "Передний", color: "Серебристый", featured: 0, imageUrl: "https://images.unsplash.com/photo-1609521263047-f8f205293f24?auto=format&fit=crop&w=1200&q=85", description: "Универсальный коммерческий микроавтобус для бизнеса и путешествий." },
 ];
 
-export const defaultVehicles: Vehicle[] = data.map((vehicle, index) => ({ ...vehicle, id: index + 1, location: "Кишинёв", status: "available" }));
+const gallery = ["https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=1200&q=85", "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=1200&q=85"];
+export const defaultVehicles: Vehicle[] = data.map((vehicle, index) => ({ ...vehicle, id: index + 1, imageUrls: [vehicle.imageUrl, ...gallery.filter((image) => image !== vehicle.imageUrl)], location: "Кишинёв", status: "available" }));
 export function getVehicles(): Vehicle[] { try { return JSON.parse(localStorage.getItem("sud-vehicles") || "null") || defaultVehicles; } catch { return defaultVehicles; } }
 export function saveVehicles(vehicles: Vehicle[]) { localStorage.setItem("sud-vehicles", JSON.stringify(vehicles)); }
