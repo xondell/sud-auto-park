@@ -154,7 +154,7 @@ const pagesAssetPaths: Plugin = { name: "pages-asset-paths", transform(code, id)
 const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector(), pagesAssetPaths];
 
 export default defineConfig({
-  base: "/sud-auto-park/",
+  base: process.env.GITHUB_ACTIONS ? "/sud-auto-park/" : "/",
   plugins,
   resolve: {
     alias: {
