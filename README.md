@@ -57,3 +57,17 @@ drizzle/                database schema and migrations
 ## Status
 
 This repository represents a catalogue and interface prototype. Before a production launch, connect the admin workflow to authenticated server-side storage, move vehicle media to managed storage, and configure the environment for the chosen hosting and database providers.
+
+## Static hosting and backend capabilities
+
+The repository also includes a GitHub Pages build:
+
+```bash
+pnpm build:pages
+```
+
+The workflow [deploy-pages.yml](.github/workflows/deploy-pages.yml) publishes `dist/public`. This static build does not run the Express/tRPC server: database-backed administration and other server endpoints require a backend deployment.
+
+[netlify.toml](netlify.toml) configures the same frontend output plus the functions in [netlify/functions](netlify/functions). Inspect that configuration when deploying the lead and Telegram webhook handlers.
+
+Data-model changes belong in [drizzle/schema.ts](drizzle/schema.ts); the browser routes live in [client/src/App.tsx](client/src/App.tsx), and API procedures in [server/routers.ts](server/routers.ts).
